@@ -24,6 +24,9 @@
     self.webSocketServer.delegate = self;
     [self.webSocketServer start];
     
+    [[NSURLSession.sharedSession dataTaskWithURL:[NSURL URLWithString:@"http://localhost:44446"] completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    }] resume];
+    
     self.cameraImageView = [[UIImageView alloc] init];
     self.cameraImageView.contentMode = UIViewContentModeScaleAspectFit;
     [self.view addSubview:self.cameraImageView];
