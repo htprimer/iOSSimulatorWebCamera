@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>camera</title>
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <script>
+
+        let errorElement = document.getElementById('errorMsg')
+        let video = document.getElementById('video')
+        let canvas = document.getElementById('canvas')
+
+        let constraints = window.constraints = {
+            audio: false,
+            video: true
+        };
+
+        function handleSuccess(stream) {
+            let videoTracks = stream.getVideoTracks()
+            console.log('Got stream with constraints:', constraints)
+            console.log('Using video device: ' + videoTracks[0].label)
+            stream.oninactive = function () {
+                console.log('Stream inactive')
+            };
+            video.srcObject = stream;
+
+            let ws = new WebSocket("ws://localhost:44445");
+            ws.onopen = function (e) {
+                console.log('Connection to server opened');
+                activeSimulator()
+                let m2 = 1024 * 1024 * 2
+                setInterval(() => {
+                  if (ws.bufferedAmount <= m2) {
+                    beginSend(ws)
+                  } else {
+                    console.log('buffer too long')
+                  }
+                }, 30);
+            }
+            ws.onclose = function() {
+              window.close()
+            }
+        }
+
+        function beginSend(ws) {
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+            let ctx =  canvas.getContext('2d')
+            ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight)
+            canvas.toBlob(function(data) {
+                ws.send(data)
+            }, "image/jpeg", 0.8)
+        }
+
+        function handleError(error) {
+        }
+
+        function activeSimulator() {
+          let xml = new XMLHttpRequest()
+          xml.open('GET', 'http://localhost:44446/?cmd=active')
+          xml.send()
+        }
+
+        navigator.mediaDevices.getUserMedia(constraints).
+            then(handleSuccess).catch(handleError)
+
+    </script>
+</body>
+</html>
